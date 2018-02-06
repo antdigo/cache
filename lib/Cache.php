@@ -1,10 +1,12 @@
 <?php
+declare(strict_types=1);
 
 namespace Amp\Cache;
 
 use Amp\Promise;
 
-interface Cache {
+interface Cache
+{
     /**
      * Gets a value associated with the given key.
      *
@@ -15,7 +17,7 @@ interface Cache {
      * @return Promise Resolves to the cached value nor `null` if it doesn't exist or fails with a CacheException on
      * failure.
      */
-    public function get(string $key): Promise;
+    public function get($key): Promise;
 
     /**
      * Sets a value associated with the given key. Overrides existing values (if they exist).
@@ -23,14 +25,14 @@ interface Cache {
      * The eventual resolution value of the resulting promise is unimportant. The success or failure of the promise
      * indicates the operation's success.
      *
-     * @param $key string Cache key.
-     * @param $value string Value to cache.
-     * @param $ttl int Timeout in seconds. The default `null` $ttl value indicates no timeout. Values less than 0 MUST
-     * throw an \Error.
+     * @param $key   string Cache key.
+     * @param $value mixed Value to cache.
+     * @param $ttl   int Timeout in seconds. The default `null` $ttl value indicates no timeout. Values less than 0 MUST
+     *               throw an \Error.
      *
      * @return Promise Resolves either successfully or fails with a CacheException on failure.
      */
-    public function set(string $key, string $value, int $ttl = null): Promise;
+    public function set($key, $value, int $ttl = null): Promise;
 
     /**
      * Deletes a value associated with the given key if it exists.
@@ -46,5 +48,5 @@ interface Cache {
      * @return Promise Resolves to `true` / `false` / `null` to indicate whether the key existed or fails with a
      * CacheException on failure.
      */
-    public function delete(string $key): Promise;
+    public function delete($key): Promise;
 }

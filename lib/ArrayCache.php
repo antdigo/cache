@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Amp\Cache;
 
@@ -7,27 +8,33 @@ use Amp\Promise;
 use Amp\Struct;
 use Amp\Success;
 
-final class ArrayCache implements Cache {
+final class ArrayCache implements Cache
+{
     private $sharedState;
+
     private $ttlWatcherId;
+
     private $maxSize;
 
     /**
      * @param int $gcInterval The frequency in milliseconds at which expired cache entries should be garbage collected.
-     * @param int $maxSize The maximum size of cache array (number of elements).
+     * @param int $maxSize    The maximum size of cache array (number of elements).
      */
-    public function __construct(int $gcInterval = 5000, int $maxSize = null) {
+    public function __construct(int $gcInterval = 5000, int $maxSize = null)
+    {
         // By using a shared state object we're able to use `__destruct()` for "normal" garbage collection of both this
         // instance and the loop's watcher. Otherwise this object could only be GC'd when the TTL watcher was cancelled
         // at the loop layer.
-        $this->sharedState = $sharedState = new class {
+        $this->sharedState = $sharedState = new class
+        {
             use Struct;
 
             public $cache = [];
             public $cacheTimeouts = [];
             public $isSortNeeded = false;
 
-            public function collectGarbage() {
+            public function collectGarbage()
+            {
                 $now = \time();
 
                 if ($this->isSortNeeded) {
@@ -53,14 +60,19 @@ final class ArrayCache implements Cache {
         Loop::unreference($this->ttlWatcherId);
     }
 
-    public function __destruct() {
+    public function __destruct()
+    {
         $this->sharedState->cache = [];
         $this->sharedState->cacheTimeouts = [];
         Loop::cancel($this->ttlWatcherId);
     }
 
     /** @inheritdoc */
-    public function get(string $key): Promise {
+    public function get($key): Promise
+    {
+        if (!\is_string($key)) {
+            throw new \TypeError("Cache key must be string");
+        }
         if (!isset($this->sharedState->cache[$key])) {
             return new Success(null);
         }
@@ -78,7 +90,11 @@ final class ArrayCache implements Cache {
     }
 
     /** @inheritdoc */
-    public function set(string $key, string $value, int $ttl = null): Promise {
+    public function set($key, $value, int $ttl = null): Promise
+    {
+        if (!\is_string($key)) {
+            throw new \TypeError("Cache key must be string");
+        }
         if ($ttl === null) {
             unset($this->sharedState->cacheTimeouts[$key]);
         } elseif (\is_int($ttl) && $ttl >= 0) {
@@ -98,7 +114,12 @@ final class ArrayCache implements Cache {
     }
 
     /** @inheritdoc */
-    public function delete(string $key): Promise {
+    public function delete($key): Promise
+    {
+        if (!\is_string($key)) {
+            throw new \TypeError("Cache key must be string");
+        }
+
         $exists = isset($this->sharedState->cache[$key]);
 
         unset(
